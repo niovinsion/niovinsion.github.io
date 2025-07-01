@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - Affiliate System</title>
+    <meta name="description" content="Dashboard Affiliate for LIFF" />
+    <meta name="author" content="iton5" />
+    <meta property="og:title" content="Dashboard Affiliate-iton5-thailand" />
+    <meta property="og:description" content="Affiliate for LIFF" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lh3.googleusercontent.com/d/1Ck_OCfEW4dEp3A1k9yfQplYmW7qmwzFF" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://bit.ly/fontiton5" type="text/css" charset="utf-8" />
+    <style>
+        :root {
+            --bg-main: #F4F1EA; 
+            --bg-card: #FFFFFF;
+            --text-header: #5D584F; 
+            --text-body: #6B7280;
+            --primary: #9c9583; 
+            --shadow-color: rgba(156, 149, 131, 0.15);
+            font-family: 'line_seed_sans_th';
+        }
+        
+        body { background-color: var(--bg-main); color: var(--text-header); }
+        
+        .kpi-card {
+            background-color: var(--bg-card);
+            border-radius: 1rem;
+            box-shadow: 0 8px 25px -5px var(--shadow-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px -5px var(--shadow-color);
+        }
+        .action-btn {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-approve { background-color: #D1FAE5; color: #065F46; } 
+        .btn-approve:hover { background-color: #A7F3D0; }
+        .btn-reject { background-color: #FEE2E2; color: #991B1B; } 
+        .btn-reject:hover { background-color: #FECACA; }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex flex-col items-center justify-center space-y-4">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white border-opacity-80"></div>
+        <p class="text-white text-xl font-semibold">กำลังโหลด...</p>
+    </div>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-4xl font-bold">Executive Dashboard</h1>
+                <p class="text-text-body">ภาพรวมระบบตัวแทนจำหน่าย</p>
+            </div>
+            <button id="refresh-button" class="text-gray-500 hover:text-gray-800 transition-transform duration-300">
+                <i class="fa-solid fa-arrows-rotate text-2xl"></i>
+            </button>
+        </header>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="kpi-card p-6 flex items-start"><div class="bg-green-100 p-3 rounded-full mr-4"><i class="fa-solid fa-sack-dollar text-2xl text-green-600"></i></div><div><p class="text-sm text-text-body">ยอดขายทั้งหมด</p><p id="totalRevenue" class="text-3xl font-bold">0</p></div></div>
+            <div class="kpi-card p-6 flex items-start"><div class="bg-yellow-100 p-3 rounded-full mr-4"><i class="fa-solid fa-hand-holding-dollar text-2xl text-yellow-600"></i></div><div><p class="text-sm text-text-body">คอมมิชชั่นทั้งหมด</p><p id="totalCommission" class="text-3xl font-bold">0</p></div></div>
+            <div class="kpi-card p-6 flex items-start"><div class="bg-blue-100 p-3 rounded-full mr-4"><i class="fa-solid fa-cart-shopping text-2xl text-blue-600"></i></div><div><p class="text-sm text-text-body">จำนวนออเดอร์</p><p id="totalSales" class="text-3xl font-bold">0</p></div></div>
+            <div class="kpi-card p-6 flex items-start"><div class="bg-purple-100 p-3 rounded-full mr-4"><i class="fa-solid fa-users text-2xl text-purple-600"></i></div><div><p class="text-sm text-text-body">จำนวนตัวแทน</p><p id="totalAffiliates" class="text-3xl font-bold">0</p></div></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+            <div class="lg:col-span-3 kpi-card p-6"><h2 class="text-xl font-semibold mb-4">5 อันดับตัวแทน (ตามยอดคอมมิชชั่น)</h2><div class="relative h-64 sm:h-80"><canvas id="topAffiliatesChart"></canvas></div></div>
+            <div class="lg:col-span-2 kpi-card p-6"><h2 class="text-xl font-semibold mb-4">5 อันดับสินค้าขายดี (ตามจำนวน)</h2><div class="relative h-64 sm:h-80 flex items-center justify-center"><canvas id="topProductsChart"></canvas></div></div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="kpi-card p-6">
+                <h2 class="text-xl font-semibold mb-4">คำขอถอนเงินที่รอดำเนินการ</h2>
+                <div id="pendingWithdrawalsList" class="space-y-3 max-h-96 overflow-y-auto"></div>
+            </div>
+            <div class="kpi-card p-6">
+                <h2 class="text-xl font-semibold mb-4">รายการขายล่าสุด</h2>
+                <div class="overflow-x-auto"><table class="w-full text-left"><thead class="border-b-2 border-gray-200"><tr><th class="p-3">สินค้า</th><th class="p-3 text-right">ยอดขาย</th><th class="p-3">ตัวแทน</th></tr></thead><tbody id="recentSalesTable"></tbody></table></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const GAS_URL = "https://script.google.com/macros/s/AKfycbyczvY5gJOq5FX6VnwYjyZb91GccHfbUnoYLJQBw24V02iPiV6lz1Ti1qHMajXjROCsMw/exec";
+            let affiliatesChart = null;
+            let productsChart = null;
+
+            const $ = (selector) => document.querySelector(selector);
+
+            const formatCurrency = (value) => `${(parseFloat(value) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บ.`;
+            
+            const apiFetch = async (action, method = 'POST', body = null, options = { showLoader: true }) => {
+                if(options.showLoader) $('#loading-overlay').style.display = 'flex';
+                try {
+                    const url = new URL(GAS_URL);
+                    const formData = new URLSearchParams(body);
+                    formData.append('action', action);
+
+                    const response = await fetch(url, { method, redirect: 'follow', body: formData });
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.message);
+                    return result;
+                } catch (error) {
+                    console.error('API Error:', error);
+                    Swal.fire('เกิดข้อผิดพลาด', error.message, 'error');
+                    return null;
+                } finally {
+                     if(options.showLoader) $('#loading-overlay').style.display = 'none';
+                }
+            };
+
+            const fetchDashboardData = async () => {
+                $('#loading-overlay').style.display = 'flex';
+                try {
+                    const response = await fetch(`${GAS_URL}?action=getExecutiveDashboard&cache_bust=${new Date().getTime()}`);
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.message);
+                    populateDashboard(result.data);
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
+                } finally {
+                    $('#loading-overlay').style.display = 'none';
+                }
+            };
+
+            const populateDashboard = (data) => {
+                $('#totalRevenue').textContent = formatCurrency(data.totalRevenue);
+                $('#totalCommission').textContent = formatCurrency(data.totalCommission);
+                $('#totalSales').textContent = (data.totalSales || 0).toLocaleString();
+                $('#totalAffiliates').textContent = (data.totalAffiliates || 0).toLocaleString();
+                
+                const withdrawalsList = $('#pendingWithdrawalsList');
+                withdrawalsList.innerHTML = '';
+                if (data.pendingWithdrawals && data.pendingWithdrawals.length > 0) {
+                    data.pendingWithdrawals.forEach(w => {
+                        withdrawalsList.innerHTML += `
+                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div>
+                                <p class="font-semibold">${w.affiliateName}</p>
+                                <p class="text-sm text-gray-500">${w.requestDate} น.</p>
+                                <p class="font-bold text-lg text-red-500">${formatCurrency(w.amount)}</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <button data-action="reject-withdrawal" data-id="${w.withdrawalId}" class="action-btn btn-reject">ปฏิเสธ</button>
+                                <button data-action="approve-withdrawal" data-id="${w.withdrawalId}" class="action-btn btn-approve">อนุมัติ</button>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    withdrawalsList.innerHTML = '<p class="text-center text-gray-400 p-4">ไม่มีรายการที่รอดำเนินการ</p>';
+                }
+
+                const salesTable = $('#recentSalesTable');
+                salesTable.innerHTML = '';
+                if (data.recentSales && data.recentSales.length > 0) {
+                    data.recentSales.forEach(sale => {
+                        salesTable.innerHTML += `<tr class="border-b border-gray-100"><td class="p-3">${sale.productName}</td><td class="p-3 text-right font-medium">${formatCurrency(sale.saleAmount)}</td><td class="p-3 text-text-body">${sale.affiliateName}</td></tr>`;
+                    });
+                } else {
+                    salesTable.innerHTML = '<tr><td colspan="3" class="text-center p-4">ไม่มีข้อมูล</td></tr>';
+                }
+
+                updateAffiliatesChart(data.topAffiliates);
+                updateProductsChart(data.topProducts);
+            };
+
+            const updateAffiliatesChart = (affiliates) => {
+                const ctx = $('#topAffiliatesChart').getContext('2d');
+                if (affiliatesChart) affiliatesChart.destroy();
+                affiliatesChart = new Chart(ctx, { type: 'bar', data: { labels: affiliates.map(a => a.displayName), datasets: [{ label: 'ยอดคอมมิชชั่น', data: affiliates.map(a => a.commission), backgroundColor: 'rgba(156, 149, 131, 0.6)', borderColor: 'rgba(156, 149, 131, 1)', borderWidth: 1, borderRadius: 5 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+            };
+
+            const updateProductsChart = (products) => {
+                const ctx = $('#topProductsChart').getContext('2d');
+                if (productsChart) productsChart.destroy();
+                productsChart = new Chart(ctx, { type: 'doughnut', data: { labels: products.map(p => p.name), datasets: [{ label: 'จำนวน', data: products.map(p => p.salesCount), backgroundColor: ['rgba(176,187,191,0.7)','rgba(202,219,200,0.7)','rgba(161,164,153,0.7)','rgba(156,149,131,0.7)','rgba(226,212,183,0.7)'], borderColor: '#FFFFFF', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } });
+            };
+
+            const handleWithdrawalApproval = (withdrawalId, status) => {
+                const isApproved = status === 'Approved';
+                Swal.fire({
+                    title: `คุณแน่ใจหรือไม่?`,
+                    text: `คุณต้องการ ${isApproved ? 'อนุมัติ' : 'ปฏิเสธ'} คำขอนี้`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: isApproved ? '#28a745' : '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'ใช่, ดำเนินการ!',
+                    cancelButtonText: 'ยกเลิก'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const processResult = await apiFetch('processWithdrawal', 'POST', {
+                            withdrawalId: withdrawalId,
+                            newStatus: status
+                        }, { showLoader: true });
+
+                        if (processResult && processResult.success) {
+                            Swal.fire('สำเร็จ!', `คำขอถูก ${isApproved ? 'อนุมัติ' : 'ปฏิเสธ'} แล้ว`, 'success');
+                            fetchDashboardData();
+                        }
+                    }
+                });
+            };
+
+            $('#refresh-button').addEventListener('click', () => {
+                 const icon = $('#refresh-button i');
+                 icon.classList.add('animate-spin');
+                 fetchDashboardData().finally(() => setTimeout(() => icon.classList.remove('animate-spin'), 500));
+            });
+
+            $('#pendingWithdrawalsList').addEventListener('click', (e) => {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                const id = target.dataset.id;
+                
+                if (action === 'approve-withdrawal') {
+                    handleWithdrawalApproval(id, 'Approved');
+                } else if (action === 'reject-withdrawal') {
+                    handleWithdrawalApproval(id, 'Rejected');
+                }
+            });
+
+            fetchDashboardData();
+        });
+    </script>
+</body>
+</html>
