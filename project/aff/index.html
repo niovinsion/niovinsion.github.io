@@ -320,7 +320,7 @@
                 $('#purchase-product-name').textContent = product.name;
                 $('#purchase-product-price').textContent = `ราคารวม: ${parseFloat(product.price).toLocaleString()} บ.`;
                 $('#purchase-text').textContent = affiliate ? `คุณกำลังซื้อผ่านลิงก์ของ "${affiliate.displayName}"` : 'คุณกำลังซื้อสินค้านี้';
-                const promptpayUrl = `https://promptpay.io/0615145563/${product.price}`;
+                const promptpayUrl = `https://promptpay.io/0955071628/${product.price}`;
                 $('#promptpay-qr-code').src = promptpayUrl;
                 $('#confirm-purchase-button').onclick = async () => {
                     const result = await apiFetch('recordSale', 'POST', { productId: product.productId, affiliateId: affiliate.affiliateId, userId: liff.getDecodedIDToken().sub, displayName: liff.getDecodedIDToken().name, pictureUrl: liff.getDecodedIDToken().picture });
