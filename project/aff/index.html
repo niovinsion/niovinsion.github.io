@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate - iton5 Shop</title>
+    <meta name="description" content="Affiliate for LIFF" />
+    <meta name="author" content="iton5" />
+    <meta property="og:title" content="Affiliate-iton5-thailand" />
+    <meta property="og:description" content="Affiliate for LIFF" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lh3.googleusercontent.com/d/1Ck_OCfEW4dEp3A1k9yfQplYmW7qmwzFF" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://bit.ly/fontiton5" type="text/css" charset="utf-8" />
+    <style>
+        :root {
+            --bg-main: #F4F1EA;
+            --text-dark: #5D584F;
+            --primary: #9c9583;
+            --accent-1: #a1a499;
+            --shadow-color: rgba(156, 149, 131, 0.2);
+            font-family: 'line_seed_sans_th';
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-dark);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animated-card {
+            animation: fadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+        }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, var(--primary) 0%, var(--accent-1) 100%);
+            color: white;
+            border: none;
+            transition: all 0.4s ease;
+            box-shadow: 0 4px 15px 0 var(--shadow-color);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px 0 var(--shadow-color);
+        }
+
+        .btn-primary:disabled {
+            background-image: none;
+            background-color: #D1D5DB;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .modal {
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .modal.is-open {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px var(--shadow-color);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-Pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        .status-Approved {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-Rejected {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+    </style>
+</head>
+
+<body class="antialiased">
+
+    <div id="loading-overlay"
+        class="fixed inset-0 bg-black bg-opacity-60 z-50 flex flex-col items-center justify-center space-y-4">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white border-opacity-80"></div>
+        <p class="text-white text-xl font-semibold">กำลังโหลด...</p>
+    </div>
+
+    <div id="app-container" class="container mx-auto p-4 max-w-lg opacity-0 transition-opacity duration-500">
+        <header id="main-header" class="text-center mb-8">
+            <h1 class="text-4xl font-bold" style="color: var(--primary);">ระบบตัวแทนจำหน่าย</h1>
+            <p id="user-greeting" class="text-lg mt-1 opacity-80"></p>
+        </header>
+
+
+        <div id="registration-view" class="view-container hidden">
+            <div class="bg-white p-8 rounded-2xl text-center animated-card card-shadow">
+                <h2 class="text-2xl font-semibold mb-4">ยินดีต้อนรับ!</h2>
+                <p class="mb-6 text-gray-600">
+                    ดูเหมือนว่าคุณยังไม่ได้เป็นสมาชิกตัวแทนจำหน่าย<br>สนใจเข้าร่วมกับเราหรือไม่?</p><button
+                    id="register-button"
+                    class="btn-primary w-full font-bold py-3 px-4 rounded-xl text-lg">สมัครเป็นตัวแทนจำหน่าย</button>
+            </div>
+        </div>
+        <div id="dashboard-view" class="view-container hidden">
+            <div class="animated-card p-6 rounded-2xl shadow-lg mb-6 text-white"
+                style="background-image: linear-gradient(135deg, var(--primary) 0%, var(--accent-1) 100%);">
+                <h3 class="text-lg font-light">คอมมิชชั่นที่ถอนได้</h3>
+                <p class="text-4xl font-bold tracking-tight" id="available-commission">0.00 บ.</p>
+                <p class="text-sm opacity-80 mt-2" id="total-commission-display"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6"><button id="withdraw-button"
+                    class="btn-primary w-full font-bold py-3 px-4 rounded-xl text-lg flex items-center justify-center gap-2"><i
+                        class="fa-solid fa-money-bill-transfer"></i>ถอนเงิน</button><button id="view-analytics-button"
+                    class="btn-secondary w-full font-bold py-3 px-4 rounded-xl text-lg flex items-center justify-center gap-2"><i
+                        class="fa-solid fa-chart-line"></i>สถิติการคลิก</button></div>
+            <div id="product-section">
+                <h3 class="text-2xl font-semibold mb-4 ml-2">เลือกสินค้าเพื่อโปรโมท</h3>
+                <div id="product-list" class="grid grid-cols-1 gap-6"></div>
+            </div>
+            <div id="withdrawal-history-section" class="mt-8">
+                <h3 class="text-2xl font-semibold mb-4 ml-2">ประวัติการถอนเงิน 💵</h3>
+                <div id="withdrawal-history-list" class="space-y-3"></div>
+            </div>
+        </div>
+        <div id="purchase-view" class="view-container hidden">
+            <div class="bg-white p-6 rounded-2xl shadow-lg text-center animated-card card-shadow">
+                <h2 class="text-2xl font-semibold mb-2">ยืนยันการสั่งซื้อ</h2>
+                <p id="purchase-text" class="mb-4 text-gray-600"></p><img id="purchase-product-image" src=""
+                    class="w-full h-48 object-cover rounded-lg mb-4" alt="Product Image">
+                <h3 id="purchase-product-name" class="text-xl font-medium"></h3>
+                <p id="purchase-product-price" class="text-lg mb-4"></p>
+                <div class="my-4 p-4 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p class="font-semibold text-gray-700">สแกน QR Code เพื่อชำระเงิน</p><img id="promptpay-qr-code"
+                        src="" class="mx-auto w-48 h-48 mt-2 rounded-md" alt="PromptPay QR Code">
+                </div><button id="confirm-purchase-button"
+                    class="btn-primary w-full font-bold py-3 px-4 rounded-xl mt-2">แจ้งโอนเงินเรียบร้อย</button>
+            </div>
+        </div>
+        <div id="analytics-view" class="view-container hidden">
+            <div class="flex items-center justify-between mb-6"><button id="back-to-dashboard-button"
+                    class="text-xl p-2 rounded-full hover:bg-gray-200"><i class="fa-solid fa-arrow-left"></i></button>
+                <h2 class="text-2xl font-bold" style="color: var(--primary);">สถิติการคลิกลิงก์</h2>
+                <div class="w-8"></div>
+            </div>
+            <div id="click-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="withdrawal-modal" class="modal">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full animated-card">
+            <h3 class="text-2xl font-semibold mb-2">คำร้องขอถอนเงิน</h3>
+            <p class="mb-4 text-gray-500">ยอดที่ถอนได้: <span id="modal-available-balance" class="font-bold"></span></p>
+            <div class="relative mb-4"><span
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">฿</span><input
+                    id="withdrawal-amount" type="number" placeholder="ระบุจำนวนเงิน"
+                    class="w-full p-3 pl-7 border rounded-lg focus:ring-2 focus:ring-offset-2"
+                    style="--tw-ring-color: var(--primary);"></div>
+            <div class="flex flex-col sm:flex-row gap-2"><button id="confirm-withdrawal-button"
+                    class="btn-primary w-full font-bold py-2 px-4 rounded-lg">ยืนยัน</button><button
+                    id="close-withdrawal-modal-button"
+                    class="btn-secondary w-full font-bold py-2 px-4 rounded-lg">ยกเลิก</button></div>
+        </div>
+    </div>
+    <div id="link-modal" class="modal">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full text-center animated-card">
+            <h3 class="text-2xl font-semibold mb-4">🔗 ลิงก์ของคุณพร้อมแล้ว!</h3>
+            <p class="mb-4 text-gray-600">คัดลอกลิงก์นี้แล้วส่งต่อได้เลย:</p>
+            <input id="affiliate-link-input" type="text" readonly
+                class="w-full p-3 border rounded-lg text-center bg-gray-100 mb-4 text-sm">
+
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button id="copy-link-button"
+                    class="w-full font-bold py-3 px-4 rounded-xl text-base bg-gradient-to-r from-[#9c958355] to-[#9c9583] text-white shadow-md hover:shadow-lg transition-all">
+                    📋 คัดลอกลิงก์
+                </button>
+
+                <button id="close-link-modal-button"
+                    class="w-full font-bold py-3 px-4 rounded-xl text-base bg-gradient-to-r from-gray-400 to-gray-500 text-gray-800 shadow-md hover:shadow-lg transition-all">
+                    ❌ ปิด
+                </button>
+            </div>
+
+            <div class="mt-3">
+                <button id="share-link-button"
+                    class="w-full font-bold py-3 px-4 rounded-xl text-base bg-gradient-to-r from-[#4aba73] to-[#51be79] text-white shadow-md hover:shadow-lg transition-all">
+                    🚀 แชร์ให้เพื่อน
+                </button>
+            </div>
+
+            <p id="copy-success-msg" class="text-green-600 mt-3 h-5"></p>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const LIFF_ID = "2007673914-wLA4JBJv";
+            const GAS_URL = "https://script.google.com/macros/s/AKfycbyczvY5gJOq5FX6VnwYjyZb91GccHfbUnoYLJQBw24V02iPiV6lz1Ti1qHMajXjROCsMw/exec";
+
+            const $ = (selector) => document.querySelector(selector);
+
+            let liffProfile = null, affiliateData = null, allProducts = [];
+
+            const Toast = Swal.mixin({
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+
+            const showView = (viewName) => {
+                document.querySelectorAll('.view-container').forEach(v => v.style.display = 'none');
+                $('#main-header').style.display = (viewName === 'purchase' || viewName === 'analytics') ? 'none' : 'block';
+                if ($(`#${viewName}-view`)) $(`#${viewName}-view`).style.display = 'block';
+            };
+
+            const apiFetch = async (action, method = 'GET', body = null, options = { showLoader: true }) => {
+                if (options.showLoader) $('#loading-overlay').style.display = 'flex';
+                try {
+                    const url = new URL(GAS_URL);
+                    url.searchParams.append('action', action);
+                    let fetchOptions = { method, redirect: 'follow', body: null, headers: {} };
+                    if (method === 'GET') {
+                        for (const key in body) url.searchParams.append(key, body[key]);
+                    } else {
+                        fetchOptions.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                        fetchOptions.body = new URLSearchParams(body);
+                    }
+                    const response = await fetch(url, fetchOptions);
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.message);
+                    return result.data;
+                } catch (error) {
+                    console.error(`API Error (${action}):`, error);
+                    if (options.showLoader) Toast.fire({ icon: 'error', title: `เกิดข้อผิดพลาด: ${error.message}` });
+                    return null;
+                } finally {
+                    if (options.showLoader) setTimeout(() => $('#loading-overlay').style.display = 'none', 300);
+                }
+            };
+
+            const renderProducts = () => {
+                const productList = $('#product-list');
+                if (!allProducts || allProducts.length === 0) {
+                    productList.innerHTML = `<p class="text-center text-gray-500">ไม่พบสินค้าในระบบ</p>`; return;
+                }
+                productList.innerHTML = allProducts.map((product, index) => `
+                    <div class="animated-card bg-white p-4 rounded-2xl card-shadow flex flex-col" style="animation-delay: ${index * 100}ms">
+                        <img src="${product.imageUrl}" onerror="this.src='https://placehold.co/600x400/eee/ccc?text=Image';" alt="${product.name}" class="w-full h-48 object-cover rounded-xl mb-4">
+                        <div class="flex-grow"><h4 class="text-xl font-semibold">${product.name}</h4><p class="text-sm text-gray-500 mt-1 mb-3">${product.description}</p></div>
+                        <div class="flex justify-between items-center mt-2"><span class="text-2xl font-bold" style="color: var(--primary);">${parseFloat(product.price).toLocaleString()} บ.</span><span class="text-sm font-medium text-green-600 bg-green-100 py-1 px-2 rounded-full">คอม: ${(product.price * product.commissionRate).toFixed(2)} บ.</span></div>
+                        <button class="get-link-btn btn-primary mt-4 w-full font-bold py-2.5 px-4 rounded-lg text-base" data-product-id="${product.productId}">รับลิงก์โปรโมท</button>
+                    </div>`).join('');
+            };
+
+            const renderWithdrawalHistory = (history) => {
+                const historyList = $('#withdrawal-history-list');
+                if (!history || history.length === 0) {
+                    historyList.innerHTML = `<div class="text-center text-gray-400 p-4 bg-gray-50 rounded-lg">ไม่มีประวัติการถอนเงิน 💵</div>`; return;
+                }
+                historyList.innerHTML = history.map(item => {
+                    const statusClasses = { 'Pending': 'status-Pending', 'Approved': 'status-Approved', 'Rejected': 'status-Rejected' };
+                    return `<div class="bg-white p-3 rounded-lg flex justify-between items-center card-shadow"><div><p class="font-semibold">${parseFloat(item.amount).toLocaleString()} บ.</p><p class="text-xs text-gray-400">${item.requestDate} น.</p></div><span class="status-badge ${statusClasses[item.status] || ''}">${item.status}</span></div>`;
+                }).join('');
+            };
+
+            const renderPurchaseView = (product, affiliate) => {
+                $('#purchase-product-image').src = product.imageUrl;
+                $('#purchase-product-name').textContent = product.name;
+                $('#purchase-product-price').textContent = `ราคารวม: ${parseFloat(product.price).toLocaleString()} บ.`;
+                $('#purchase-text').textContent = affiliate ? `คุณกำลังซื้อผ่านลิงก์ของ "${affiliate.displayName}"` : 'คุณกำลังซื้อสินค้านี้';
+                const promptpayUrl = `https://promptpay.io/0615145563/${product.price}`;
+                $('#promptpay-qr-code').src = promptpayUrl;
+                $('#confirm-purchase-button').onclick = async () => {
+                    const result = await apiFetch('recordSale', 'POST', { productId: product.productId, affiliateId: affiliate.affiliateId, userId: liff.getDecodedIDToken().sub, displayName: liff.getDecodedIDToken().name, pictureUrl: liff.getDecodedIDToken().picture });
+                    if (result) {
+
+                        Toast.fire({ icon: "success", title: "การสั่งซื้อสำเร็จ!" }).then(() => {
+                            const flexMessage = JSON.parse(result.body);
+                            sendText([flexMessage])
+                            // liff.closeWindow(); 
+
+                        });
+
+                    }
+
+                };
+                showView('purchase');
+            };
+
+            const renderAnalytics = (clicks) => {
+                const clickList = $('#click-list');
+                if (!clicks || clicks.length === 0) {
+                    clickList.innerHTML = `<div class="text-center p-8 bg-white rounded-2xl card-shadow"><i class="fa-regular fa-folder-open text-4xl text-gray-400 mb-4"></i><p class="text-gray-500">ยังไม่มีข้อมูลการคลิก</p></div>`; return;
+                }
+                clickList.innerHTML = clicks.map(click => `
+                    <div class="bg-white p-4 rounded-2xl card-shadow flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full overflow-hidden border-2" style="border-color: var(--primary);"><img src="${click.clickerPictureUrl}" onerror="this.src='https://placehold.co/100x100/eee/ccc?text=User';" alt="User" class="w-full h-full object-cover"></div>
+                        <div><p class="font-semibold">${click.clickerDisplayName} <span class="font-normal text-gray-500">คลิกดู</span> ${click.productName}</p><p class="text-sm text-gray-400">${click.timestamp} น.</p></div>
+                    </div>`).join('');
+            };
+
+            const updateDashboardUI = () => {
+                if (!affiliateData) { showView('registration'); return; }
+                const available = parseFloat(affiliateData.availableCommission);
+                const total = parseFloat(affiliateData.totalCommission);
+                $('#available-commission').textContent = `${available.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บ.`;
+                $('#total-commission-display').textContent = `จากทั้งหมด: ${total.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บ.`;
+                $('#withdraw-button').disabled = available <= 0;
+                renderProducts();
+                renderWithdrawalHistory(affiliateData.withdrawalHistory);
+                showView('dashboard');
+            };
+
+            const initializeAppAsAffiliate = async () => {
+                affiliateData = await apiFetch('getAffiliateData', 'GET', { lineUserId: liffProfile.userId });
+                updateDashboardUI();
+            };
+
+            const handleWithdrawal = async (button) => {
+                const amount = $('#withdrawal-amount').value;
+                if (!amount || parseFloat(amount) <= 0) { Toast.fire({ icon: "error", title: "กรุณาระบุจำนวนเงิน" }); return; }
+                button.disabled = true; button.innerHTML = '<span class="flex items-center justify-center"><svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>กำลังดำเนินการ...</span>';
+
+                const result = await apiFetch('requestWithdrawal', 'POST', { affiliateId: affiliateData.affiliateId, amountStr: amount, userId: liff.getDecodedIDToken().sub, displayName: liff.getDecodedIDToken().name });
+                if (result !== null) {
+                    Toast.fire({ icon: "success", title: "ส่งคำร้องสำเร็จ!" });
+                    const flexWithdraw = JSON.parse(result.body);
+                    sendText([flexWithdraw]);
+                    $('#withdrawal-modal').classList.remove('is-open');
+                    await initializeAppAsAffiliate();
+                }
+                button.disabled = false; button.innerHTML = 'ยืนยัน';
+            };
+
+            const handleCopyLink = () => {
+                const input = $('#affiliate-link-input');
+                input.select(); input.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    $('#copy-success-msg').textContent = '✅ คัดลอกแล้ว!';
+                } catch (err) {
+                    $('#copy-success-msg').textContent = 'ไม่สามารถคัดลอก';
+                }
+                setTimeout(() => { $('#copy-success-msg').textContent = ''; }, 2000);
+            };
+
+            const handleShareCopyLink = () => {
+                const input = $('#affiliate-link-input');
+                const link = input.value;
+
+                const flex = [{
+                    "type": "flex",
+                    "altText": "แชร์สินค้า/บริการ",
+                    "contents": {
+                        "type": "bubble",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "horizontal",
+                                    "contents": [
+                                        {
+                                            "type": "box",
+                                            "layout": "vertical",
+                                            "contents": [
+                                                {
+                                                    "type": "image",
+                                                    "url": "" + liff.getDecodedIDToken().picture,
+                                                    "aspectMode": "cover",
+                                                    "size": "full"
+                                                }
+                                            ],
+                                            "cornerRadius": "100px",
+                                            "width": "72px",
+                                            "height": "72px"
+                                        },
+                                        {
+                                            "type": "box",
+                                            "layout": "vertical",
+                                            "contents": [
+                                                {
+                                                    "type": "text",
+                                                    "contents": [
+                                                        {
+                                                            "type": "span",
+                                                            "text": "" + liff.getDecodedIDToken().name,
+                                                            "weight": "bold",
+                                                            "color": "#000000"
+                                                        },
+                                                        {
+                                                            "type": "span",
+                                                            "text": "     "
+                                                        },
+                                                        {
+                                                            "type": "span",
+                                                            "text": "แนะนำสินค้าบริการ ดีเว่อร์"
+                                                        }
+                                                    ],
+                                                    "size": "sm",
+                                                    "wrap": true
+                                                },
+                                                {
+                                                    "type": "box",
+                                                    "layout": "baseline",
+                                                    "contents": [
+                                                        {
+                                                            "type": "text",
+                                                            "text": "ร้าน iton5 shop",
+                                                            "size": "sm",
+                                                            "color": "#bcbcbc"
+                                                        }
+                                                    ],
+                                                    "spacing": "sm",
+                                                    "margin": "md"
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "spacing": "xl",
+                                    "paddingAll": "20px"
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "button",
+                                            "action": {
+                                                "type": "uri",
+                                                "label": "ดูสินค้า/บริการ",
+                                                "uri": "" + link
+                                            },
+                                            "style": "primary",
+                                            "height": "sm",
+                                            "color": "#9c9583"
+                                        }
+                                    ],
+                                    "paddingAll": "20px"
+                                }
+                            ],
+                            "paddingAll": "0px"
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [],
+                            "backgroundColor": "#9c9583"
+                        }
+                    }
+
+                }
+                ];
+                shareTargetPicker(flex)
+            };
+
+            const addEventListeners = () => {
+                document.body.addEventListener('click', async (e) => {
+                    const target = e.target;
+
+                    if (target.closest('#register-button')) {
+                        const regResult = await apiFetch('registerAffiliate', 'POST', { lineUserId: liffProfile.userId, displayName: liffProfile.displayName, pictureUrl: liffProfile.pictureUrl });
+                        if (regResult) {
+                            Toast.fire({ icon: "success", title: "สมัครสำเร็จ!" });
+
+                            const flexMessage = JSON.parse(regResult.body);
+                            sendText([flexMessage]);
+                            initializeApp();
+                        }
+                    } else if (target.closest('#withdraw-button')) {
+                        $('#modal-available-balance').textContent = $('#available-commission').textContent;
+                        $('#withdrawal-amount').value = '';
+                        $('#withdrawal-modal').classList.add('is-open');
+                    } else if (target.closest('#view-analytics-button')) {
+                        const clicks = await apiFetch('getClickTrackData', 'GET', { affiliateId: affiliateData.affiliateId });
+                        if (clicks) { renderAnalytics(clicks); showView('analytics'); }
+                    } else if (target.closest('#back-to-dashboard-button')) {
+                        showView('dashboard');
+                    } else if (target.closest('#close-withdrawal-modal-button')) {
+                        $('#withdrawal-modal').classList.remove('is-open');
+                    } else if (target.closest('#close-link-modal-button')) {
+                        $('#link-modal').classList.remove('is-open');
+                    } else if (target.closest('#confirm-withdrawal-button')) {
+                        handleWithdrawal(target.closest('#confirm-withdrawal-button'));
+                    } else if (target.closest('#copy-link-button')) {
+                        handleCopyLink();
+                    } else if (target.closest('#share-link-button')) {
+                        handleShareCopyLink();
+                    } else if (target.closest('.get-link-btn')) {
+                        const productId = target.closest('.get-link-btn').dataset.productId;
+                        $('#affiliate-link-input').value = `https://liff.line.me/${LIFF_ID}?productId=${productId}&affId=${affiliateData.affiliateId}`;
+                        $('#link-modal').classList.add('is-open');
+                    }
+                });
+            };
+
+            const initializeApp = async () => {
+                try {
+                    addEventListeners();
+                    await liff.init({ liffId: LIFF_ID, withLoginOnExternalBrowser: true });
+                    if (!liff.isLoggedIn()) { liff.login({ redirectUri: window.location.href }); return; }
+
+                    liffProfile = await liff.getProfile();
+                    $('#user-greeting').textContent = `สวัสดีคุณ ${liffProfile.displayName}!`;
+
+                    const params = new URLSearchParams(window.location.search);
+                    const productId = params.get('productId'), affId = params.get('affId');
+
+                    allProducts = await apiFetch('getProducts');
+
+                    if (productId && affId && allProducts) {
+                        apiFetch('trackClick', 'POST', { affiliateId: affId, productId: productId, clickerUserId: liffProfile.userId, clickerDisplayName: liffProfile.displayName, clickerPictureUrl: liffProfile.pictureUrl }, { showLoader: false });
+                        const productToBuy = allProducts.find(p => p.productId === productId);
+                        if (productToBuy) {
+                            renderPurchaseView(productToBuy, { displayName: affId.substring(0, 10) + '...', affiliateId: affId });
+                        } else {
+                            Toast.fire({ icon: 'error', title: 'ไม่พบสินค้า' });
+                            initializeAppAsAffiliate();
+                        }
+                    } else {
+                        initializeAppAsAffiliate();
+                    }
+                } catch (error) {
+                    console.error("LIFF Init Error:", error);
+                    Toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเปิดแอป' });
+                } finally {
+                    $('#loading-overlay').style.display = 'none';
+                    $('#app-container').classList.remove('opacity-0');
+                }
+            };
+
+            initializeApp();
+        });
+
+        function sendText(text) {
+            if (!liff.isInClient()) {
+                shareTargetPicker(text);
+            } else {
+                sendflex(text);
+            }
+        }
+        function sendflex(text) {
+            liff.sendMessages(text).then(function () {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: "top-end",
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+                Toast.fire({
+                    icon: "success",
+                    title: "ส่งเข้าแชทเรียบร้อย"
+                }).then(() => { liff.closeWindow(); })
+                console.log("Send Message Success!");
+
+            })
+        }
+        function shareTargetPicker(text) {
+            liff.shareTargetPicker(text).then(function (res) {
+                if (res) {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.onmouseenter = Swal.stopTimer;
+                            toast.onmouseleave = Swal.resumeTimer;
+                        }
+                    });
+                    Toast.fire({
+                        icon: "success",
+                        title: "ส่งเข้าแชทเรียบร้อย"
+                    });
+
+                } else {
+
+                    console.log("TargetPicker was closed!");
+                }
+            }).catch(function (error) {
+                window.alert("Failed to send message " + error);
+            });
+        }
+    </script>
+</body>
+
+</html>
